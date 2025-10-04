@@ -1,247 +1,157 @@
-#include <Servo.h>
+/*------ Arduino Fire Fighting Robot ---- */
+#include <SoftwareSerial.h>   // Include SoftwareSerial.h library
+#include <Servo.h>            // Include servo.h library  
 
-Servo myservo;  // create servo object to control a servo
-// twelve servo objects can be created on most boards
+// --- Definitions ---
+Servo myservo;
+int pos = 0;
+boolean fire = false;
+int bt_data; // Variable to receive data from the serial port
+int mode = 1;
 
-int pos = 0; 
+// --- Pin Assignments ---
+#define rxPinBluetooth 2
+#define txPinBluetooth 3
+
+#define GAS_SENSOR 11    // Gas sensor
+#define Left 10          // Left sensor
+#define Right 8          // Right sensor
+#define Forward 9        // Front sensor
+
+#define RM1 4            // Right motor 1
+#define RM2 5            // Right motor 2
+#define LM1 6            // Left motor 1
+#define LM2 7            // Left motor 2
+#define pump 12
+
+SoftwareSerial BT_Serial(rxPinBluetooth, txPinBluetooth);
 
 void setup() {
-  // put your setup code here, to run once:
- myservo.attach(11);
-pinMode(2, OUTPUT);
-pinMode(3, OUTPUT);
-pinMode(4, OUTPUT);
-pinMode(5, OUTPUT);
-pinMode(6, OUTPUT);
-pinMode(A0, INPUT);
-pinMode(A1, INPUT);
-pinMode(A2, INPUT);
-Serial.begin(9600);
-digitalWrite(6, HIGH);
+  BT_Serial.begin(9600);
+  Serial.begin(9600);
+
+  pinMode(Left, INPUT);
+  pinMode(Right, INPUT);
+  pinMode(Forward, INPUT);
+  pinMode(GAS_SENSOR, INPUT);
+  pinMode(RM1, OUTPUT);
+  pinMode(RM2, OUTPUT);
+  pinMode(LM1, OUTPUT);
+  pinMode(LM2, OUTPUT);
+  pinMode(pump, OUTPUT);
+
+  myservo.attach(13);
+  myservo.write(90); 
+
+  digitalWrite(pump, HIGH);   
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  myservo.write(90); // Keep servo centered
 
-int a = analogRead(A0);
-int b = analogRead(A1);
-int c = analogRead(A2);
-Serial.print(a);
-Serial.print("    ");
-Serial.print(b);
-Serial.print("    ");
-Serial.print(c);
-Serial.println("    "); 
-delay(50);
-
-if (a<=250)
-
-{
-  digitalWrite(2, LOW);
-  digitalWrite(3, LOW);
-  digitalWrite(4, LOW);
-  digitalWrite(5, LOW);
-  
-  digitalWrite(6, LOW);
-  
-  for (pos = 60; pos <= 120; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 120; pos >= 60; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 60; pos <= 120; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 120; pos >= 60; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 60; pos <= 120; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 120; pos >= 60; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  //delay(200);
-  
+  if (BT_Serial.available() > 0) {     
+    bt_data = BT_Serial.read();  
   }
 
-
-  else if(b<=450)
-
-{
-
-digitalWrite(2, LOW);
-  digitalWrite(3, LOW);
-  digitalWrite(4, LOW);
-  digitalWrite(5, LOW);
-  
-  digitalWrite(6, LOW);
-for (pos = 60; pos <= 120; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 120; pos >= 60; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 60; pos <= 120; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 120; pos >= 60; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 60; pos <= 120; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 120; pos >= 60; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
+  // --- Mode Selection ---
+  if (bt_data == 8) {
+    mode = 1; // Auto mode
+  } else if (bt_data == 9) {
+    mode = 0; // Manual mode
   }
 
+  // --- Manual Control ---
+  if (mode == 0) {
+    if      (bt_data == 1) { forward(); }
+    else if (bt_data == 2) { backward(); }
+    else if (bt_data == 3) { turnLeft(); }
+    else if (bt_data == 4) { turnRight(); }
+    else if (bt_data == 5) { Stop(); }
+    else if (bt_data == 6) { put_off_fire(); }
+    delay(10);
   }
-  else if(c<=250)
+  // --- Automatic Control ---
+  else {
+    if (digitalRead(Left) == 1 && digitalRead(Right) == 1 && digitalRead(Forward) == 1) {
+      delay(500);
+      Stop();
+      delay(500);
+    }
+    else if (digitalRead(Forward) == 0) {
+      forward();
+      fire = true;
+    }
+    else if (digitalRead(Left) == 0) {
+      turnLeft();
+    }
+    else if (digitalRead(Right) == 0) {
+      turnRight();
+    }
+    delay(200); // Change this value to change the distance
 
-{
+    if (digitalRead(GAS_SENSOR) == 0) {
+      Serial.println("Gas is Detected.");
+      put_off_fire();
+    }
 
-digitalWrite(2, LOW);
-  digitalWrite(3, LOW);
-  digitalWrite(4, LOW);
-  digitalWrite(5, LOW);
-  
-  digitalWrite(6, LOW);
-for (pos = 60; pos <= 120; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
+    while (fire == true) {
+      put_off_fire();
+      Serial.println("Fire Detected.");
+    }
   }
-  for (pos = 120; pos >= 60; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 60; pos <= 120; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 120; pos >= 60; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 60; pos <= 120; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
-  for (pos = 120; pos >= 60; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15 ms for the servo to reach the position
-  }
+}
 
-  }
-  
-
-else if(a>=251 && a<=700)
-
-{
- digitalWrite(6, HIGH);
-
+// --- Fire Extinguishing Routine ---
+void put_off_fire() {
+  Stop();
+  digitalWrite(pump, LOW);
+  delay(300);
  
-
-digitalWrite(2, LOW);
-  digitalWrite(3,HIGH);
-  digitalWrite(4, HIGH);
-  digitalWrite(5, LOW);
-
-  
-  delay(500);
-  
-  digitalWrite(6, HIGH);
-  
-digitalWrite(2, HIGH);
-  digitalWrite(3, LOW);
-  digitalWrite(4, HIGH);
-  digitalWrite(5, LOW);
-  delay(500);
-
+  for (pos = 50; pos <= 130; pos += 1) { 
+    myservo.write(pos); 
+    delay(10);  
   }
-
-
-
-else if(b>=251 && b<=800)
-
-{
-
-
-
-digitalWrite(2, LOW);
-  digitalWrite(3,HIGH);
-  digitalWrite(4, HIGH);
-  digitalWrite(5, LOW);
-  
-  digitalWrite(6, HIGH);
-
-  
-
-
+  for (pos = 130; pos >= 50; pos -= 1) { 
+    myservo.write(pos); 
+    delay(10);
   }
+  digitalWrite(pump, HIGH);
+  myservo.write(90); 
+  fire = false;
+}
 
+// --- Movement Routines ---
+void forward() {
+  digitalWrite(RM1, HIGH);
+  digitalWrite(RM2, LOW);
+  digitalWrite(LM1, HIGH);
+  digitalWrite(LM2, LOW);
+}
 
+void backward() {
+  digitalWrite(RM1, LOW);
+  digitalWrite(RM2, HIGH);
+  digitalWrite(LM1, LOW);
+  digitalWrite(LM2, HIGH);
+}
 
+void turnRight() {
+  digitalWrite(RM1, LOW);
+  digitalWrite(RM2, HIGH);
+  digitalWrite(LM1, HIGH);
+  digitalWrite(LM2, LOW);
+}
 
-else if(c>=251 && c<=800)
+void turnLeft() {
+  digitalWrite(RM1, HIGH);
+  digitalWrite(RM2, LOW);
+  digitalWrite(LM1, LOW);
+  digitalWrite(LM2, HIGH);
+}
 
-{
-
-
-  
-  digitalWrite(2, HIGH);
-  digitalWrite(3, LOW);
-  digitalWrite(4, LOW);
-  digitalWrite(5, HIGH);
-
-  
-  digitalWrite(6, HIGH);
-delay(500);
-  digitalWrite(6, HIGH);
-  
-digitalWrite(2, HIGH);
-  digitalWrite(3, LOW);
-  digitalWrite(4, HIGH);
-  digitalWrite(5, LOW);
-  delay(500);
-
-  }
-
-else 
-
-{
-digitalWrite(6, HIGH);
-
-digitalWrite(2, HIGH);
-  digitalWrite(3, LOW);
-  digitalWrite(4, HIGH);
-  digitalWrite(5, LOW);
-  
- 
-  
-  }
-  
-  
-
-  }
+void Stop() {
+  digitalWrite(RM1, LOW);
+  digitalWrite(RM2, LOW);
+  digitalWrite(LM1, LOW);
+  digitalWrite(LM2, LOW);
+}
